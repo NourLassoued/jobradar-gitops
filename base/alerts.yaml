@@ -1,0 +1,47 @@
+# S0-06 : les 4 règles d'alerte de la Phase 0
+# Ce sont ces alertes qui déclencheront l'agent OpsPilot plus tard
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: jobradar-alerts
+  namespace: jobradar
+spec:
+  groups:
+    - name: jobradar.rules
+      rules:
+        - alert: PodCrashLooping
+          expr: max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace="jobradar", reason="CrashLoopBackOff"}) == 1
+          for: 1m
+          labels: { severity: critical }
+          annotations:
+            summary: "Le pod {{ $labels.pod }} redémarre en boucle"
+
+        - alert: PodImagePullFailed
+          expr: max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace="jobradar", reason=~"ErrImagePull|ImagePullBackOff"}) == 1
+          for: 1m
+          labels: { severity: critical }
+          annotations:
+            summary: "Impossible de télécharger l'image du pod {{ $labels.pod }}"
+
+        - alert: ContainerOOMKilled
+          expr: max by (namespace, pod, container) (kube_pod_container_status_last_terminated_reason{namespace="jobradar", reason="OOMKilled"}) == 1
+          for: 0m
+          labels: { severity: warning }
+          annotations:
+            summary: "Le conteneur {{ $labels.container }} a manqué de mémoire (OOMKilled)"
+
+        - alert: PodNotReady
+          expr: sum by (namespace, pod) (kube_pod_status_ready{namespace="jobradar", condition="false"}) == 1
+          for: 3m
+          labels: { severity: warning }
+          annotations:
+            summary: "Le pod {{ $labels.pod }} n'est pas prêt depuis 3 minutes"
+
+        - alert: HighHttp5xxRate
+          expr: |
+            sum(rate(http_server_requests_seconds_count{namespace="jobradar", status=~"5.."}[5m]))
+            / sum(rate(http_server_requests_seconds_count{namespace="jobradar"}[5m])) > 0.05
+          for: 2m
+          labels: { severity: warning }
+          annotations:
+            summary: "Plus de 5 % des requêtes du backend JobRadar renvoient une erreur 5xx"

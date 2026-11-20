@@ -1,0 +1,93 @@
+# Backend Spring Boot de JobRadar
+# - la config (application.properties avec tes clés API) vient du Secret "jobradar-config", monté dans /app/config/
+# - les variables d'environnement ci-dessous remplacent les valeurs du fichier (base PostgreSQL du cluster, Actuator)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jobradar-backend
+  namespace: jobradar
+  labels: { app: jobradar-backend }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: jobradar-backend }
+  template:
+    metadata:
+      labels: { app: jobradar-backend }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/nourlassoued/jobradar-backend:0.1.0   # ← le tag que l'on cassera pour tester
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SERVER_PORT
+              value: "8080"
+            # Base PostgreSQL du cluster (remplace H2 / la base locale)
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/jobradar
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: jobradar-db, key: username } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: jobradar-db, key: password } }
+            - name: SPRING_JPA_DATABASE_PLATFORM
+              value: org.hibernate.dialect.PostgreSQLDialect
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+              value: org.hibernate.dialect.PostgreSQLDialect
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
+            - name: SPRING_H2_CONSOLE_ENABLED
+              value: "false"
+            # Adresse publique de l'application dans le cluster (redirections, e-mails)
+            - name: JOBRADAR_FRONTEND_URL
+              value: http://localhost:8081
+            - name: APP_FRONTEND_URL
+              value: http://localhost:8081
+            - name: APP_URL_FRONTEND
+              value: http://localhost:8081
+            # Actuator : santé pour Kubernetes + métriques pour Prometheus
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: health,info,prometheus
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              value: "true"
+            - name: MANAGEMENT_HEALTH_MAIL_ENABLED
+              value: "false"      # un serveur mail indisponible ne doit pas rendre l'appli "non prête"
+            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+              value: jobradar
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+          startupProbe:                  # laisse le temps à Spring Boot de démarrer
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 5
+            failureThreshold: 40
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits: { memory: 768Mi }    # ← la valeur que l'on baissera pour simuler un OOMKilled
+      volumes:
+        - name: config
+          secret:
+            secretName: jobradar-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jobradar-backend
+  namespace: jobradar
+  labels: { app: jobradar-backend }   # label lu par le ServiceMonitor
+spec:
+  selector: { app: jobradar-backend }
+  ports:
+    - name: http                       # nom de port lu par le ServiceMonitor
+      port: 8080
+      targetPort: http
