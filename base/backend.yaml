@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/nourlassoued/jobradar-backend:9.9.9   # ← le tag que l'on cassera pour tester
+          image: ghcr.io/nourlassoued/jobradar-backend:0.1.1   # ← le tag que l'on cassera pour tester
           ports:
             - name: http
               containerPort: 8080
