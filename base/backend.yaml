@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/nourlassoued/jobradar-backend:sha-e7f329f   # ← le tag que l'on cassera pour tester
+          image: ghcr.io/nourlassoued/jobradar-backend:sha-e7f329f
           ports:
             - name: http
               containerPort: 8080
@@ -73,7 +73,7 @@ spec:
             periodSeconds: 10
           resources:
             requests: { cpu: 200m, memory: 512Mi }
-            limits: { memory: 768Mi }    # ← la valeur que l'on baissera pour simuler un OOMKilled
+            limits: { memory: 768Mi }
       volumes:
         - name: config
           secret:
