@@ -73,7 +73,7 @@ spec:
             periodSeconds: 10
           resources:
             requests: { cpu: 200m, memory: 512Mi }
-            limits: { memory: 768Mi }
+            limits: { memory: 160Mi }
       volumes:
         - name: config
           secret:
