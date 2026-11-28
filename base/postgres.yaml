@@ -19,7 +19,7 @@ metadata:
   namespace: jobradar
 spec:
   serviceName: postgres
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels: { app: postgres }
   template:
