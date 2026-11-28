@@ -72,7 +72,7 @@ spec:
             httpGet: { path: /actuator/health/readiness, port: http }
             periodSeconds: 10
           resources:
-            requests: { cpu: "64", memory: 512Mi }
+            requests: { cpu: 200m, memory: 512Mi }
             limits: { memory: 768Mi }
       volumes:
         - name: config
