@@ -23,7 +23,7 @@ spec:
               containerPort: 8080
           env:
             - name: SERVER_PORT
-              value: "9090"
+              value: "8080"
             # Base PostgreSQL du cluster (remplace H2 / la base locale)
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://postgres:5432/jobradar
