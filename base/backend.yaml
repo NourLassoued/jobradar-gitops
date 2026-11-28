@@ -32,7 +32,7 @@ spec:
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom: { secretKeyRef: { name: jobradar-db, key: username } }
             - name: SPRING_DATASOURCE_PASSWORD
-              valueFrom: { secretKeyRef: { name: jobradar-db, key: password } }
+              valueFrom: { secretKeyRef: { name: jobradar-db, key: pass } }
             - name: SPRING_JPA_DATABASE_PLATFORM
               value: org.hibernate.dialect.PostgreSQLDialect
             - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
